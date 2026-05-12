@@ -1,13 +1,27 @@
 package org.example.service1;
 
+import org.example.grpc.GreetingServiceGrpc;
+import org.example.grpc.HelloRequest;
+import org.example.grpc.HelloResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class TestController {
 
+    @Autowired
+    GreetingServiceGrpc.GreetingServiceBlockingStub stub;
+
     @GetMapping("/api/test")
-    public String test() {
-        return "Hello from service1!";
+    public String test(@RequestParam(defaultValue = "Guest") String name) {
+        HelloRequest request = HelloRequest.newBuilder()
+                .setName(name)
+                .build();
+
+        HelloResponse response = stub.sayHello(request);
+
+        return "Service 1 received gRPC response: " + response.getMessage();
     }
 }

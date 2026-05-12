@@ -11,7 +11,4 @@ public class Service3Controller {
     public String getTest(@RequestHeader("X-User-Name") String username) {
         return "Hej " + username;
     }
-
-
-
 }
