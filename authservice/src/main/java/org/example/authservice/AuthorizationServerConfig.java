@@ -92,16 +92,11 @@ public class AuthorizationServerConfig {
     }
 
     @Bean
-    JwtEncoder jwtEncoder(JWKSource<SecurityContext> jwkSource) {
-        return new NimbusJwtEncoder(jwkSource);
+    public JWKSource<SecurityContext> jwkSource() {
+        RSAKey rsaKey = generateRsa();
+        JWKSet jwkSet = new JWKSet(rsaKey);
+        return (jwkSelector, securityContext) -> jwkSelector.select(jwkSet);
     }
-
-//    @Bean
-//    public JWKSource<SecurityContext> jwkSource() {
-//        RSAKey rsaKey = generateRsa();
-//        JWKSet jwkSet = new JWKSet(rsaKey);
-//        return (jwkSelector, securityContext) -> jwkSelector.select(jwkSet);
-//    }
 
     private static RSAKey generateRsa() {
         KeyPair keyPair = generateRsaKey();
@@ -126,38 +121,4 @@ public class AuthorizationServerConfig {
         return keyPair;
     }
 //https://github.com/spring-projects/spring-authorization-server/issues/1030
-    @Bean
-    public OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer() {
-        return context -> {
-            JwsHeader.Builder headers = context.getJwsHeader();
-            //JwtClaimsSet.Builder claims = context.getClaims();
-            if (context.getTokenType().equals(OAuth2TokenType.ACCESS_TOKEN)) {
-                headers.algorithm(SignatureAlgorithm.ES256);
-            } else if (context.getTokenType().getValue().equals(OidcParameterNames.ID_TOKEN)) {
-                headers.algorithm(SignatureAlgorithm.ES256);
-            }
-        };
-    }
-
-    @Bean
-    public JWKSource<SecurityContext> jwkSource() {
-        try {
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
-            kpg.initialize(new ECGenParameterSpec("secp256r1")); // P-256
-
-            KeyPair kp = kpg.generateKeyPair();
-            ECPublicKey pub = (ECPublicKey) kp.getPublic();
-            ECPrivateKey priv = (ECPrivateKey) kp.getPrivate();
-
-            ECKey ecKey = new ECKey.Builder(Curve.P_256, pub)
-                    .privateKey(priv)
-                    .keyID(UUID.randomUUID().toString())
-                    .build();
-            JWKSet jwkSet = new JWKSet(ecKey);
-            return (jwkSelector, securityContext) -> jwkSelector.select(jwkSet);
-
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
-    }
 }
