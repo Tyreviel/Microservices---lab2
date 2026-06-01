@@ -28,7 +28,8 @@ public class ChatController {
                 .setContent(request.content())
                 .build();
         
-        return chatStub.sendMessage(chatMessage);
+        var grpcResponse = chatStub.sendMessage(chatMessage);
+        return new ChatResponse(grpcResponse.getSuccess(), grpcResponse.getMessageId());
     }
 
     @GetMapping("/history")
@@ -42,8 +43,17 @@ public class ChatController {
                 .setLimit(limit)
                 .build();
         
-        return chatStub.getChatHistory(request);
+        var grpcResponse = chatStub.getChatHistory(request);
+        
+        var messages = grpcResponse.getMessagesList().stream()
+                .map(m -> new ChatMessageDto(m.getSender(), m.getRecipient(), m.getContent(), m.getTimestamp()))
+                .toList();
+        
+        return new HistoryResponse(messages);
     }
 }
 
 record MessageRequest(String recipient, String content) {}
+record ChatMessageDto(String sender, String recipient, String content, long timestamp) {}
+record HistoryResponse(java.util.List<ChatMessageDto> messages) {}
+record ChatResponse(boolean success, String messageId) {}

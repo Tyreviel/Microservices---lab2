@@ -1,0 +1,222 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chat-app-config
+data:
+  AUTH_ISSUER_URI: "http://authservice:9000"
+  SPRING_RABBITMQ_HOST: "rabbitmq"
+  SPRING_DATASOURCE_URL_CHAT: "jdbc:mysql://mysql:3306/chat_db?createDatabaseIfNotExist=true"
+  SPRING_DATASOURCE_URL_NOTIFICATION: "jdbc:mysql://mysql:3306/notification_db?createDatabaseIfNotExist=true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authservice
+spec:
+  ports:
+    - port: 9000
+  selector:
+    app: authservice
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authservice
+spec:
+  selector:
+    matchLabels:
+      app: authservice
+  template:
+    metadata:
+      labels:
+        app: authservice
+    spec:
+      containers:
+        - name: authservice
+          image: authservice:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: chat-app-config
+          ports:
+            - containerPort: 9000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bff
+spec:
+  ports:
+    - port: 8080
+  selector:
+    app: bff
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bff
+spec:
+  selector:
+    matchLabels:
+      app: bff
+  template:
+    metadata:
+      labels:
+        app: bff
+    spec:
+      containers:
+        - name: bff
+          image: bff:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: chat-app-config
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatapi
+spec:
+  ports:
+    - port: 8081
+  selector:
+    app: chatapi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatapi
+spec:
+  selector:
+    matchLabels:
+      app: chatapi
+  template:
+    metadata:
+      labels:
+        app: chatapi
+    spec:
+      containers:
+        - name: chatapi
+          image: chatapi:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: GRPC_SERVER_ADDRESS
+              value: "chatservice:8083"
+          envFrom:
+            - configMapRef:
+                name: chat-app-config
+          ports:
+            - containerPort: 8081
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatservice
+spec:
+  ports:
+    - port: 8083
+  selector:
+    app: chatservice
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatservice
+spec:
+  selector:
+    matchLabels:
+      app: chatservice
+  template:
+    metadata:
+      labels:
+        app: chatservice
+    spec:
+      containers:
+        - name: chatservice
+          image: chatservice:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: chat-app-config
+                  key: SPRING_DATASOURCE_URL_CHAT
+          envFrom:
+            - configMapRef:
+                name: chat-app-config
+          ports:
+            - containerPort: 8083
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: userservice
+spec:
+  ports:
+    - port: 8082
+  selector:
+    app: userservice
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: userservice
+spec:
+  selector:
+    matchLabels:
+      app: userservice
+  template:
+    metadata:
+      labels:
+        app: userservice
+    spec:
+      containers:
+        - name: userservice
+          image: userservice:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: chat-app-config
+          ports:
+            - containerPort: 8082
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notificationservice
+spec:
+  ports:
+    - port: 8085
+  selector:
+    app: notificationservice
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notificationservice
+spec:
+  selector:
+    matchLabels:
+      app: notificationservice
+  template:
+    metadata:
+      labels:
+        app: notificationservice
+    spec:
+      containers:
+        - name: notificationservice
+          image: notificationservice:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: chat-app-config
+                  key: SPRING_DATASOURCE_URL_NOTIFICATION
+          envFrom:
+            - configMapRef:
+                name: chat-app-config
+          ports:
+            - containerPort: 8085

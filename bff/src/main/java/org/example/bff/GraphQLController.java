@@ -21,7 +21,6 @@ public class GraphQLController {
     private final Oauth2JwtTokenService tokenService;
     private final RestClient client1 = RestClient.create("http://localhost:8081");
     private final RestClient client2 = RestClient.create("http://localhost:8082");
-    private final RestClient client3 = RestClient.create("http://localhost:8083");
 
     public GraphQLController(Oauth2JwtTokenService tokenService) {
         this.tokenService = tokenService;
@@ -55,12 +54,6 @@ public class GraphQLController {
                     .retrieve()
                     .body(UserProfile.class);
         });
-    }
-
-    @QueryMapping
-    public Result merged() {
-        log.info("---> Anropade huvud-query: merged");
-        return new Result(null, null, null);
     }
 
     @QueryMapping
@@ -99,62 +92,36 @@ public class GraphQLController {
         });
     }
 
-    @SchemaMapping(typeName = "Result", field = "service1")
-    public CompletableFuture<String> getService1(Result result) {
+    @SchemaMapping(typeName = "ChatMessage", field = "sender")
+    public CompletableFuture<UserProfile> getSender(ChatMessage message) {
+        return fetchUserProfile(message.sender());
+    }
+
+    @SchemaMapping(typeName = "ChatMessage", field = "recipient")
+    public CompletableFuture<UserProfile> getRecipient(ChatMessage message) {
+        return fetchUserProfile(message.recipient());
+    }
+
+    private CompletableFuture<UserProfile> fetchUserProfile(String username) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        // 2. Skicka med den till servicen
         String jwtToken = tokenService.getAccessToken(auth);
 
         return CompletableFuture.supplyAsync(() -> {
-            log.info("Exekverar: Hämtar data från Service 1");
-
+            log.debug("GraphQL: Aggregating user profile for {}", username);
             try {
-                return client1.get()
-                        .uri("/api/test")
+                return client2.get()
+                        .uri("/api/users/{username}", username)
                         .headers(h -> h.setBearerAuth(jwtToken))
                         .retrieve()
-                        .body(String.class);
+                        .body(UserProfile.class);
             } catch (Exception e) {
-                return "Service 1 (ChatAPI) unreachable or endpoint changed";
-            }
-        });
-    }
-
-    @SchemaMapping(typeName = "Result", field = "service2")
-    public CompletableFuture<String> getService2(Result result) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String jwtToken = tokenService.getAccessToken(auth);
-        return CompletableFuture.supplyAsync(() -> {
-            log.info("Exekverar: Hämtar data från Service 2");
-
-            return client2.get()
-                    .uri("/api/test")
-                    .headers(h -> h.setBearerAuth(jwtToken))
-                    .retrieve()
-                    .body(String.class);
-        });
-    }
-
-    @SchemaMapping(typeName = "Result", field = "service3")
-    public CompletableFuture<String> getService3(Result result) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
-        return CompletableFuture.supplyAsync(() -> {
-            log.info("Exekverar: Hämtar data från Service 3 (med X-User-Name)");
-            try {
-                return client3.get()
-                        .uri("/api/test")
-                        .headers(h -> h.set("X-User-Name", auth.getName()))
-                        .retrieve()
-                        .body(String.class);
-            } catch (Exception e) {
-                return "Service 3 (ChatService) unreachable via REST";
+                log.warn("Could not fetch user profile for {}: {}", username, e.getMessage());
+                return new UserProfile(username, "unknown", "Unknown");
             }
         });
     }
 }
 
-record Result(String service1, String service2, String service3) {}
 record UserProfile(String username, String email, String status) {}
 record MessageRequest(String recipient, String content) {}
 record ChatMessage(String sender, String recipient, String content, long timestamp) {}

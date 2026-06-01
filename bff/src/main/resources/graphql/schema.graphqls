@@ -1,8 +1,7 @@
 type Query {
-    merged: Result
-    chatHistory(contactId: String!, limit: Int): HistoryResponse
     me: UserProfile
     userProfile(username: String!): UserProfile
+    chatHistory(contactId: String!, limit: Int): HistoryResponse
 }
 
 type UserProfile {
@@ -15,21 +14,15 @@ type Mutation {
     sendMessage(recipient: String!, content: String!): ChatResponse
 }
 
-type Result {
-    service1: String
-    service2: String
-    service3: String
-}
-
 type HistoryResponse {
     messages: [ChatMessage]
 }
 
 type ChatMessage {
-    sender: String
-    recipient: String
+    sender: UserProfile
+    recipient: UserProfile
     content: String
-    timestamp: String
+    timestamp: Float
 }
 
 type ChatResponse {
