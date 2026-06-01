@@ -1,5 +1,6 @@
 package org.example.chatservice;
 
+import org.example.grpc.user.*;
 import org.example.chatservice.model.ChatMessageEntity;
 import org.example.chatservice.repository.ChatMessageRepository;
 import org.example.chatservice.service.ChatService;
@@ -18,16 +19,31 @@ public class ChatGrpcService extends ChatServiceGrpc.ChatServiceImplBase {
     
     private final ChatService chatService;
     private final ChatMessageRepository chatMessageRepository;
+    private final UserServiceGrpc.UserServiceBlockingStub userStub;
 
-    public ChatGrpcService(ChatService chatService, ChatMessageRepository chatMessageRepository) {
+    public ChatGrpcService(ChatService chatService, 
+                           ChatMessageRepository chatMessageRepository,
+                           UserServiceGrpc.UserServiceBlockingStub userStub) {
         this.chatService = chatService;
         this.chatMessageRepository = chatMessageRepository;
+        this.userStub = userStub;
     }
 
     @Override
     public void sendMessage(ChatMessage request, StreamObserver<ChatResponse> responseObserver) {
         log.info("Received message from {} to {}: {}", request.getSender(), request.getRecipient(), request.getContent());
         
+        try {
+            // Verify recipient exists via gRPC
+            UserResponse user = userStub.getUserProfile(UserRequest.newBuilder()
+                    .setUsername(request.getRecipient())
+                    .build());
+            log.info("Verified recipient {} exists (ID: {})", user.getUsername(), user.getId());
+        } catch (Exception e) {
+            log.error("Failed to verify recipient {}: {}", request.getRecipient(), e.getMessage());
+            // Optionally fail here if we want strict verification
+        }
+
         String messageId = chatService.saveMessageAndOutbox(
             request.getSender(), 
             request.getRecipient(), 

@@ -143,6 +143,8 @@ spec:
                 configMapKeyRef:
                   name: chat-app-config
                   key: SPRING_DATASOURCE_URL_CHAT
+            - name: USER_SERVICE_ADDRESS
+              value: "userservice:8082"
           envFrom:
             - configMapRef:
                 name: chat-app-config

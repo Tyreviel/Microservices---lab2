@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package org.example.grpc.user;
+
+option java_multiple_files = true;
+option java_package = "org.example.grpc.user";
+
+service UserService {
+  rpc GetUserProfile (UserRequest) returns (UserResponse);
+}
+
+message UserRequest {
+  string username = 1;
+}
+
+message UserResponse {
+  string username = 1;
+  string email = 2;
+  string status = 3;
+  int64 id = 4;
+}
