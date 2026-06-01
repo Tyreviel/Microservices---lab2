@@ -187,38 +187,36 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: notificationservice
+  name: botservice
 spec:
   ports:
-    - port: 8085
+    - port: 8086
   selector:
-    app: notificationservice
+    app: botservice
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: notificationservice
+  name: botservice
 spec:
   selector:
     matchLabels:
-      app: notificationservice
+      app: botservice
   template:
     metadata:
       labels:
-        app: notificationservice
+        app: botservice
     spec:
       containers:
-        - name: notificationservice
-          image: notificationservice:latest
+        - name: botservice
+          image: botservice:latest
           imagePullPolicy: IfNotPresent
           env:
-            - name: SPRING_DATASOURCE_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: chat-app-config
-                  key: SPRING_DATASOURCE_URL_NOTIFICATION
+            - name: CHAT_SERVICE_ADDRESS
+              value: "chatservice:8083"
           envFrom:
             - configMapRef:
                 name: chat-app-config
           ports:
-            - containerPort: 8085
+            - containerPort: 8086
+

@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "org.example.grpc.chat";
+option java_outer_classname = "ChatProto";
+
+package chat;
+
+service ChatService {
+  rpc SendMessage (ChatMessage) returns (ChatResponse);
+  rpc GetChatHistory (HistoryRequest) returns (HistoryResponse);
+}
+
+message ChatMessage {
+  string sender = 1;
+  string recipient = 2;
+  string content = 3;
+  int64 timestamp = 4;
+}
+
+message ChatResponse {
+  bool success = 1;
+  string message_id = 2;
+}
+
+message HistoryRequest {
+  string user_id = 1;
+  string contact_id = 2;
+  int32 limit = 3;
+}
+
+message HistoryResponse {
+  repeated ChatMessage messages = 1;
+}
