@@ -19,15 +19,14 @@ import static org.springframework.web.servlet.function.RouterFunctions.route;
 public class BffConfig {
 
     @Bean
-    SecurityFilterChain security(HttpSecurity http) {
+    SecurityFilterChain security(HttpSecurity http) throws Exception {
         return http
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/users/register").permitAll()
                         .anyRequest().authenticated()
                 )
                 .csrf(csrf -> csrf.disable())
-                // Enable OAuth2 login (for browser users)
                 .oauth2Login(Customizer.withDefaults())
-                // Enable OAuth2 client (needed for tokenRelay)
                 .oauth2Client(Customizer.withDefaults())
                 .build();
     }
@@ -36,6 +35,7 @@ public class BffConfig {
     public RouterFunction<ServerResponse> userRoutes() {
         return route()
                 .path("/api/users", builder -> builder
+                        .POST("/register", http())
                         .GET("/me", http())
                         .GET("/{username}", http())
                         .before(uri("http://localhost:8082/"))
