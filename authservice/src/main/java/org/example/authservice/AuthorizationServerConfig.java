@@ -30,6 +30,8 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
@@ -43,6 +45,19 @@ import java.util.UUID;
 
 @Configuration
 public class AuthorizationServerConfig {
+
+    @Bean
+    public OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer(UserRepository userRepository) {
+        return context -> {
+            if (context.getTokenType().getValue().equals("access_token")) {
+                userRepository.findByUsername(context.getPrincipal().getName())
+                        .ifPresent(user -> {
+                            context.getClaims().claim("user_id", user.getId());
+                        });
+            }
+        };
+    }
+
     @Bean
     @Order(1)
     SecurityFilterChain authorizationServerSecurityFilterChain(
