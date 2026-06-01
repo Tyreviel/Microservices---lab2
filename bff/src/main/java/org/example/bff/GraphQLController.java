@@ -28,6 +28,36 @@ public class GraphQLController {
     }
 
     @QueryMapping
+    public CompletableFuture<UserProfile> me() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String jwtToken = tokenService.getAccessToken(auth);
+
+        return CompletableFuture.supplyAsync(() -> {
+            log.info("GraphQL: Fetching profile for current user");
+            return client2.get()
+                    .uri("/api/users/me")
+                    .headers(h -> h.setBearerAuth(jwtToken))
+                    .retrieve()
+                    .body(UserProfile.class);
+        });
+    }
+
+    @QueryMapping
+    public CompletableFuture<UserProfile> userProfile(@Argument String username) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String jwtToken = tokenService.getAccessToken(auth);
+
+        return CompletableFuture.supplyAsync(() -> {
+            log.info("GraphQL: Fetching profile for user {}", username);
+            return client2.get()
+                    .uri("/api/users/{username}", username)
+                    .headers(h -> h.setBearerAuth(jwtToken))
+                    .retrieve()
+                    .body(UserProfile.class);
+        });
+    }
+
+    @QueryMapping
     public Result merged() {
         log.info("---> Anropade huvud-query: merged");
         return new Result(null, null, null);
@@ -125,6 +155,7 @@ public class GraphQLController {
 }
 
 record Result(String service1, String service2, String service3) {}
+record UserProfile(String username, String email, String status) {}
 record MessageRequest(String recipient, String content) {}
 record ChatMessage(String sender, String recipient, String content, long timestamp) {}
 record HistoryResponse(java.util.List<ChatMessage> messages) {}

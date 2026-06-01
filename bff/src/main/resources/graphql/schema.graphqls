@@ -1,6 +1,14 @@
 type Query {
     merged: Result
     chatHistory(contactId: String!, limit: Int): HistoryResponse
+    me: UserProfile
+    userProfile(username: String!): UserProfile
+}
+
+type UserProfile {
+    username: String
+    email: String
+    status: String
 }
 
 type Mutation {

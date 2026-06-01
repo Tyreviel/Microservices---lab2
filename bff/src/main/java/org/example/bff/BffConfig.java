@@ -33,6 +33,18 @@ public class BffConfig {
     }
 
     @Bean
+    public RouterFunction<ServerResponse> userRoutes() {
+        return route()
+                .path("/api/users", builder -> builder
+                        .GET("/me", http())
+                        .GET("/{username}", http())
+                        .before(uri("http://localhost:8082/"))
+                        .filter(tokenRelay())
+                )
+                .build();
+    }
+
+    @Bean
     public RouterFunction<ServerResponse> chatRoutes() {
         return route()
                 .path("/api/chat", builder -> builder
