@@ -1,4 +1,4 @@
-# Microservices Integration Lab: Order & Stock Service
+# Microservices - lab2
 
 This project implements an asynchronous integration between `OrderService` and `StockService` using the Outbox Pattern and Idempotent Consumer.
 
@@ -93,7 +93,7 @@ curl http://localhost:8081/orders/2
 curl http://localhost:8082/stocks
 
 # Verify via logs that the OutboxRelay performed the recovery
-docker logs microservices26-orderservice-1 | grep "Outbox Recovery"
+docker logs microservices-lab2-orderservice-1 | grep "Outbox Recovery"
 ```
 
 #### PowerShell
@@ -115,7 +115,7 @@ Invoke-RestMethod -Uri "http://localhost:8081/orders/2"
 Invoke-RestMethod -Uri "http://localhost:8082/stocks"
 
 # Verify via logs that the OutboxRelay performed the recovery
-docker logs microservices26-orderservice-1 | Select-String "Outbox Recovery"
+docker logs microservices-lab2-orderservice-1 | Select-String "Outbox Recovery"
 ```
 
 ---
@@ -138,7 +138,7 @@ sleep 10
 curl http://localhost:8082/stocks
 
 # Check logs for deduplication
-docker logs microservices26-stockservice-1 | grep "already processed. Skipping"
+docker logs microservices-lab2-stockservice-1 | grep "already processed. Skipping"
 ```
 
 #### PowerShell
@@ -157,7 +157,7 @@ Start-Sleep -Seconds 10
 Invoke-RestMethod -Uri "http://localhost:8082/stocks"
 
 # Check logs for deduplication
-docker logs microservices26-stockservice-1 | Select-String "already processed. Skipping"
+docker logs microservices-lab2-stockservice-1 | Select-String "already processed. Skipping"
 ```
 
 ---
@@ -183,7 +183,7 @@ sleep 15
 curl http://localhost:8082/stocks
 
 # Check logs for retry attempts
-docker logs microservices26-stockservice-1 | grep -E "Simulating transient failure|Retry detected"
+docker logs microservices-lab2-stockservice-1 | grep -E "Simulating transient failure|Retry detected"
 ```
 
 #### PowerShell
@@ -205,7 +205,7 @@ Start-Sleep -Seconds 15
 Invoke-RestMethod -Uri "http://localhost:8082/stocks"
 
 # Check logs for retry attempts
-docker logs microservices26-stockservice-1 | Select-String "Simulating transient failure", "Retry detected"
+docker logs microservices-lab2-stockservice-1 | Select-String "Simulating transient failure", "Retry detected"
 ```
 
 ---
@@ -270,7 +270,7 @@ curl -X POST http://localhost:8081/orders -H "Content-Type: application/json" -d
 sleep 10
 
 # Check stockservice logs to see the retries and the failure
-docker logs microservices26-stockservice-1 | grep "Negative quantity detected"
+docker logs microservices-lab2-stockservice-1 | grep "Negative quantity detected"
 ```
 
 #### PowerShell
@@ -287,7 +287,7 @@ Invoke-RestMethod -Method Post -Uri "http://localhost:8081/orders" -ContentType 
 Start-Sleep -Seconds 10
 
 # Check stockservice logs to see the retries and the failure
-docker logs microservices26-stockservice-1 | Select-String "Negative quantity detected"
+docker logs microservices-lab2-stockservice-1 | Select-String "Negative quantity detected"
 ```
 
 #### Checking the DLQ in RabbitMQ Web Manager
@@ -355,11 +355,11 @@ Illustrates how to enrich published events with metadata headers (such as `X-Sen
 2. Inspect the logs of the `stockservice`:
    - **Bash:**
      ```bash
-     docker logs microservices26-stockservice-1 | grep "Authentication successful"
+     docker logs microservices-lab2-stockservice-1 | grep "Authentication successful"
      ```
    - **PowerShell:**
      ```powershell
-     docker logs microservices26-stockservice-1 | Select-String "Authentication successful"
+     docker logs microservices-lab2-stockservice-1 | Select-String "Authentication successful"
      ```
    *Expected Log Output:*
    ```text

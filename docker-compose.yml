@@ -1,3 +1,4 @@
+name: microservices-lab2
 services:
   mysql:
     image: mysql:8.0
