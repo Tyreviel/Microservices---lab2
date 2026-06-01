@@ -1,0 +1,49 @@
+package org.example.chatapi;
+
+import org.example.grpc.chat.*;
+import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+@RestController
+@RequestMapping("/api/chat")
+public class ChatController {
+
+    private static final Logger log = LoggerFactory.getLogger(ChatController.class);
+    private final ChatServiceGrpc.ChatServiceBlockingStub chatStub;
+
+    public ChatController(ChatServiceGrpc.ChatServiceBlockingStub chatStub) {
+        this.chatStub = chatStub;
+    }
+
+    @PostMapping("/send")
+    public ChatResponse sendMessage(@RequestBody MessageRequest request) {
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("User {} sending message to {}", currentUser, request.recipient());
+        
+        ChatMessage chatMessage = ChatMessage.newBuilder()
+                .setSender(currentUser)
+                .setRecipient(request.recipient())
+                .setContent(request.content())
+                .build();
+        
+        return chatStub.sendMessage(chatMessage);
+    }
+
+    @GetMapping("/history")
+    public HistoryResponse getHistory(@RequestParam String contactId, @RequestParam(defaultValue = "50") int limit) {
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("User {} fetching history with {}", currentUser, contactId);
+        
+        HistoryRequest request = HistoryRequest.newBuilder()
+                .setUserId(currentUser)
+                .setContactId(contactId)
+                .setLimit(limit)
+                .build();
+        
+        return chatStub.getChatHistory(request);
+    }
+}
+
+record MessageRequest(String recipient, String content) {}

@@ -1,9 +1,30 @@
-type Query{
-    merged : Result
+type Query {
+    merged: Result
+    chatHistory(contactId: String!, limit: Int): HistoryResponse
+}
+
+type Mutation {
+    sendMessage(recipient: String!, content: String!): ChatResponse
 }
 
 type Result {
-    service1 : String
-    service2 : String
-    service3 : String
+    service1: String
+    service2: String
+    service3: String
+}
+
+type HistoryResponse {
+    messages: [ChatMessage]
+}
+
+type ChatMessage {
+    sender: String
+    recipient: String
+    content: String
+    timestamp: String
+}
+
+type ChatResponse {
+    success: Boolean
+    messageId: String
 }
