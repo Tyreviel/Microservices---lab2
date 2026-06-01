@@ -38,6 +38,8 @@ public class BffConfig {
                         .POST("/register", http())
                         .GET("/me", http())
                         .GET("/{username}", http())
+                        .PUT("/me", http())
+                        .DELETE("/me", http())
                         .before(uri("http://localhost:8082/"))
                         .filter(tokenRelay())
                 )

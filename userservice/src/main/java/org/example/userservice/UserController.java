@@ -57,7 +57,35 @@ public class UserController {
         log.info("Fetching profile for user: {}", username);
         return userRepository.findByUsername(username)
                 .map(u -> new UserProfile(u.getUsername(), u.getEmail(), u.getStatus()))
-                .orElse(new UserProfile(username, "unknown", "Offline"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    @PutMapping("/me")
+    public UserProfile updateProfile(@RequestBody UpdateProfileRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+        log.info("Updating profile for user: {}", username);
+
+        UserEntity user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        if (request.email() != null) user.setEmail(request.email());
+        if (request.status() != null) user.setStatus(request.status());
+        
+        UserEntity saved = userRepository.save(user);
+        return new UserProfile(saved.getUsername(), saved.getEmail(), saved.getStatus());
+    }
+
+    @DeleteMapping("/me")
+    public void deleteAccount() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+        log.info("Deleting account for user: {}", username);
+
+        UserEntity user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        userRepository.delete(user);
     }
     
     @GetMapping("/test")
@@ -68,3 +96,4 @@ public class UserController {
 
 record UserProfile(String username, String email, String status) {}
 record RegisterRequest(String username, String password, String email) {}
+record UpdateProfileRequest(String email, String status) {}
