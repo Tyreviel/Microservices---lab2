@@ -1,4 +1,16 @@
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init-script
+data:
+  init.sql: |
+    CREATE DATABASE IF NOT EXISTS orders_db;
+    CREATE DATABASE IF NOT EXISTS stock_db;
+    CREATE DATABASE IF NOT EXISTS users_db;
+    CREATE DATABASE IF NOT EXISTS chat_db;
+    CREATE DATABASE IF NOT EXISTS notification_db;
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: mysql
@@ -29,6 +41,13 @@ spec:
               value: root
           ports:
             - containerPort: 3306
+          volumeMounts:
+            - name: init-db
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: init-db
+          configMap:
+            name: mysql-init-script
 ---
 apiVersion: v1
 kind: Service
