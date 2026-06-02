@@ -4,31 +4,42 @@ A modern, scalable distributed chat application built with Java, Spring Boot, gR
 
 ## 🏗️ Architecture Overview
 
-The system consists of six specialized microservices and a shared infrastructure layer:
+The system consists of eight specialized microservices and a shared infrastructure layer:
 
 ### 🚀 Core Services
 *   **BFF (Backend-for-Frontend):**
+    *   **User Interface:** Serves a built-in Chat & Profile dashboard.
     *   **GraphQL API:** Aggregates data from User and Chat services into a unified schema.
     *   **REST Proxy:** Provides direct, authenticated access to downstream services.
     *   **Security Gateway:** Manages OAuth2 login and JWT distribution.
 *   **UserService:**
-    *   Full CRUD for user profiles.
-    *   Persistent storage in `users_db`.
-    *   High-performance gRPC endpoint for internal profile lookups.
+    *   Full CRUD for user profiles and internal gRPC profile lookups.
 *   **ChatService (Message Engine):**
-    *   Handles message persistence and history.
-    *   **Outbox Pattern:** Ensures atomic database updates and event publishing.
-    *   gRPC Server for message operations.
+    *   Handles message persistence and history using the **Outbox Pattern**.
 *   **ChatAPI:**
-    *   A REST-to-gRPC bridge that translates web requests for the ChatService.
+    *   A REST-to-gRPC bridge for external web requests.
 *   **BotService:**
-    *   Reactive consumer that listens for chat events on RabbitMQ.
-    *   Generates automated support responses and injects them back via gRPC.
+    *   Automated support agent that replies to messages via RabbitMQ events.
 *   **NotificationService:**
-    *   Asynchronous consumer that simulates real-time push/email notifications.
+    *   Simulates real-time push/email alerts for new chat messages.
+*   **OrderService:**
+    *   Handles transactional e-commerce flows (demonstrating Saga & Outbox patterns).
 *   **AuthService:**
-    *   OAuth2 Authorization Server using Spring Authorization Server.
-    *   Database-backed authentication against the shared `users_db`.
+    *   OAuth2 / OpenID Connect server managing cluster-wide security.
+
+## 🔑 Authentication & Login
+
+To access the platform, follow these steps:
+
+1.  **Register a User:**
+    Use PowerShell to create your account via the BFF:
+    ```powershell
+    Invoke-RestMethod -Method Post -Uri "http://bff.localtest.me/api/users/register" -ContentType "application/json" -Body '{"username": "oscar", "password": "password123", "email": "oscar@example.com"}'
+    ```
+2.  **Log In:**
+    Visit [http://bff.localtest.me](http://bff.localtest.me) in your browser. You will be redirected to the **Auth Service** login page.
+3.  **Chat:**
+    Once logged in, use the dashboard to chat with the **SupportBot**!
 
 ## 🛡️ Security
 *   **OAuth2 / OpenID Connect:** Standardized login flow handled by the BFF.
