@@ -16,13 +16,13 @@ public class MergeController {
         String jwtToken = client.getAccessToken().getTokenValue() ;
 
         var result1 = RestClient
-                .create("http://localhost:8081/api/test")
+                .create("http://chatapi:8081/api/test")
                 .get()
                 .headers(h -> h.setBearerAuth(jwtToken))
                 .retrieve().body(String.class);
 
         var result2 = RestClient
-                .create("http://localhost:8082/api/test")
+                .create("http://userservice:8082/api/test")
                 .get()
                 .headers(h -> h.setBearerAuth(jwtToken))
                 .retrieve().body(String.class);
@@ -35,13 +35,13 @@ public class MergeController {
         String jwtToken = client.getAccessToken().getTokenValue() ;
 
         var result1 = RestClient
-                .create("http://localhost:8081/api/test")
+                .create("http://chatapi:8081/api/test")
                 .get()
                 .headers(h -> h.setBearerAuth(jwtToken))
                 .retrieve().body(String.class);
 
         var result2 = RestClient
-                .create("http://localhost:8083/api/test")
+                .create("http://chatservice:8083/api/test")
                 .get()
                 .headers(h -> h.set("X-User-Name", "demo"))
                 .retrieve().body(String.class);

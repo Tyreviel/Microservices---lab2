@@ -40,7 +40,7 @@ public class BffConfig {
                         .GET("/{username}", http())
                         .PUT("/me", http())
                         .DELETE("/me", http())
-                        .before(uri("http://localhost:8082/"))
+                        .before(uri("http://userservice:8082/"))
                         .filter(tokenRelay())
                 )
                 .build();
@@ -52,7 +52,7 @@ public class BffConfig {
                 .path("/api/chat", builder -> builder
                         .POST("/send", http())
                         .GET("/history", http())
-                        .before(uri("http://localhost:8081/"))
+                        .before(uri("http://chatapi:8081/"))
                         .filter(tokenRelay())
                 )
                 .build();
@@ -60,20 +60,20 @@ public class BffConfig {
 
     @Bean
     public RouterFunction<ServerResponse> route1() {
-        // /api/test -> http://localhost:8081/api/test
+        // /api/test -> http://chatapi:8081/api/test
         return route()
                 .GET("/api/test", http())
-                .before(uri("http://localhost:8081/"))
+                .before(uri("http://chatapi:8081/"))
                 .filter(tokenRelay())
                 .build();
     }
 
     @Bean
     public RouterFunction<ServerResponse> route2() {
-        // /api/test2 -> http://localhost:8082/api/test
+        // /api/test2 -> http://userservice:8082/api/test
         return route()
                 .GET("/api/test2", http())
-                .before(uri("http://localhost:8082/"))
+                .before(uri("http://userservice:8082/"))
                 .before(setPath("/api/test"))
                 .filter(tokenRelay())
                 .build();
@@ -81,10 +81,10 @@ public class BffConfig {
 
 //    @Bean
 //    public RouterFunction<ServerResponse> route1WithSetPathAndSegment() {
-//        // /test -> http://localhost:8081/api/test
+//        // /test -> http://chatapi:8081/api/test
 //        return route()
 //                .GET("/{segment}", http())
-//                .before(uri("http://localhost:8081/"))
+//                .before(uri("http://chatapi:8081/"))
 //                .before(setPath("/api/{segment}"))
 //                .filter(tokenRelay())
 //                .build();
@@ -97,10 +97,10 @@ public class BffConfig {
      */
     @Bean
     public RouterFunction<ServerResponse> routeWithUsername() {
-        // /api/test -> http://localhost:8083/api/test
+        // /api/test -> http://chatservice:8083/api/test
         return route()
                 .GET("/api/test3", http())
-                .before(uri("http://localhost:8083/"))
+                .before(uri("http://chatservice:8083/"))
                 .before(setPath("/api/test"))
                 .filter((request, next) -> {
                     // Hämta användarnamnet från Principal (Spring Security)

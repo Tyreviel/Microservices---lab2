@@ -19,8 +19,8 @@ public class GraphQLController {
     private static final Logger log = LoggerFactory.getLogger(GraphQLController.class);
 
     private final Oauth2JwtTokenService tokenService;
-    private final RestClient client1 = RestClient.create("http://localhost:8081");
-    private final RestClient client2 = RestClient.create("http://localhost:8082");
+    private final RestClient client1 = RestClient.create("http://chatapi:8081");
+    private final RestClient client2 = RestClient.create("http://userservice:8082");
 
     public GraphQLController(Oauth2JwtTokenService tokenService) {
         this.tokenService = tokenService;
