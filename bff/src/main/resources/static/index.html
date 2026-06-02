@@ -7,16 +7,18 @@
     <style>
         :root {
             --primary: #2563eb;
+            --danger: #ef4444;
             --bg: #f8fafc;
             --text: #1e293b;
             --border: #e2e8f0;
         }
         body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
         .container { max-width: 800px; margin: 0 auto; display: grid; gap: 20px; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid var(--border); }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid var(--border); position: relative; }
         h2 { margin-top: 0; font-size: 1.25rem; color: var(--primary); }
         
-        #profile-info { display: flex; gap: 20px; align-items: center; }
+        #profile-display { display: flex; gap: 20px; align-items: center; }
+        #profile-edit { display: none; flex-direction: column; gap: 10px; margin-top: 15px; }
         .status-badge { padding: 4px 12px; border-radius: 99px; background: #dcfce7; color: #166534; font-size: 0.875rem; font-weight: 500; }
         
         #chat-window { height: 400px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; }
@@ -26,18 +28,50 @@
         .message .meta { font-size: 0.75rem; opacity: 0.8; margin-bottom: 4px; }
 
         .input-group { display: flex; gap: 10px; }
-        input { flex: 1; padding: 10px 15px; border: 1px solid var(--border); border-radius: 8px; outline: none; transition: border-color 0.2s; }
+        input, select { padding: 10px 15px; border: 1px solid var(--border); border-radius: 8px; outline: none; transition: border-color 0.2s; }
         input:focus { border-color: var(--primary); }
-        button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
-        button:hover { filter: brightness(1.1); }
+        .flex-grow { flex: 1; }
+        
+        button { padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; border: none; transition: filter 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-outline { background: white; border: 1px solid var(--border); color: var(--text); }
+        .btn-danger { background: var(--danger); color: white; }
+        button:hover { filter: brightness(0.9); }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .top-right { position: absolute; top: 20px; right: 20px; display: flex; gap: 8px; }
+        .logout-link { color: #64748b; text-decoration: none; font-size: 0.875rem; }
+        .logout-link:hover { color: var(--primary); }
     </style>
 </head>
 <body>
     <div class="container">
         <header class="card">
-            <h2>User Profile</h2>
-            <div id="profile-info">Loading profile...</div>
+            <div class="top-right">
+                <a href="/logout" class="logout-link">Logout</a>
+            </div>
+            <h2>User Profile (CRUD)</h2>
+            <div id="profile-display">
+                <div id="profile-info" class="flex-grow">Loading profile...</div>
+                <button class="btn-outline" onclick="toggleEdit(true)">Edit Profile</button>
+            </div>
+            <form id="profile-edit">
+                <div class="input-group">
+                    <input type="email" id="edit-email" placeholder="Email" class="flex-grow" required>
+                    <select id="edit-status">
+                        <option value="Online">Online</option>
+                        <option value="Away">Away</option>
+                        <option value="Busy">Busy</option>
+                        <option value="Invisible">Invisible</option>
+                    </select>
+                </div>
+                <div class="input-group" style="margin-top: 10px;">
+                    <button type="submit" class="btn-primary">Save Changes</button>
+                    <button type="button" class="btn-outline" onclick="toggleEdit(false)">Cancel</button>
+                    <div class="flex-grow"></div>
+                    <button type="button" class="btn-danger" onclick="deleteAccount()">Delete Account</button>
+                </div>
+            </form>
         </header>
 
         <main class="card">
@@ -46,8 +80,8 @@
                 <div style="color: #64748b; text-align: center; margin-top: auto;">No messages yet. Send a hello!</div>
             </div>
             <div class="input-group">
-                <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
-                <button id="send-btn">Send</button>
+                <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off" class="flex-grow">
+                <button id="send-btn" class="btn-primary">Send</button>
             </div>
         </main>
     </div>
@@ -57,6 +91,8 @@
         const messageInput = document.getElementById('message-input');
         const sendBtn = document.getElementById('send-btn');
         const profileInfo = document.getElementById('profile-info');
+        const profileDisplay = document.getElementById('profile-display');
+        const profileEditForm = document.getElementById('profile-edit');
 
         let currentUser = null;
         let lastMessageFingerprint = "";
@@ -70,12 +106,53 @@
                 profileInfo.innerHTML = `
                     <strong>${data.username}</strong>
                     <span class="status-badge">${data.status || 'Active'}</span>
-                    <span style="color: #64748b">${data.email}</span>
+                    <span style="color: #64748b; margin-left: 10px;">${data.email}</span>
                 `;
-                loadHistory(true); // Initial load with forced scroll
+                
+                // Pre-fill edit form
+                document.getElementById('edit-email').value = data.email;
+                document.getElementById('edit-status').value = data.status || 'Online';
+                
+                loadHistory(true);
             } catch (err) {
                 profileInfo.innerHTML = '<span style="color: #ef4444">Error loading profile. Please refresh.</span>';
             }
+        }
+
+        function toggleEdit(show) {
+            profileDisplay.style.display = show ? 'none' : 'flex';
+            profileEditForm.style.display = show ? 'flex' : 'none';
+        }
+
+        profileEditForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                email: document.getElementById('edit-email').value,
+                status: document.getElementById('edit-status').value
+            };
+            
+            try {
+                const response = await fetch('/api/users/me', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (response.ok) {
+                    fetchProfile();
+                    toggleEdit(false);
+                }
+            } catch (err) { alert('Failed to update profile'); }
+        });
+
+        async function deleteAccount() {
+            if (!confirm('Are you absolutely sure? This will delete your account permanently.')) return;
+            
+            try {
+                const response = await fetch('/api/users/me', { method: 'DELETE' });
+                if (response.ok) {
+                    window.location.href = '/logout';
+                }
+            } catch (err) { alert('Failed to delete account'); }
         }
 
         async function loadHistory(forceScroll = false) {
@@ -99,22 +176,16 @@
                 const { data } = await response.json();
                 const messages = data.chatHistory.messages || [];
                 
-                // Sort by timestamp (oldest first)
                 messages.sort((a, b) => a.timestamp - b.timestamp);
-
-                // Create a unique "fingerprint" of the chat history to detect changes
                 const fingerprint = messages.map(m => m.timestamp + m.content).join("|");
                 
-                // Only update if the content has changed or scroll is forced
                 if (fingerprint !== lastMessageFingerprint || forceScroll) {
                     chatWindow.innerHTML = '';
-                    
                     if (messages.length === 0) {
                         chatWindow.innerHTML = '<div style="color: #64748b; text-align: center; margin-top: auto;">No messages yet. Send a hello!</div>';
                     } else {
                         messages.forEach(msg => appendMessage(msg.sender.username, msg.content, false));
                     }
-                    
                     lastMessageFingerprint = fingerprint;
                     chatWindow.scrollTop = chatWindow.scrollHeight;
                 }
@@ -130,9 +201,7 @@
                 <div class="content">${content}</div>
             `;
             chatWindow.appendChild(div);
-            if (scroll) {
-                chatWindow.scrollTop = chatWindow.scrollHeight;
-            }
+            if (scroll) chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
         async function sendMessage() {
@@ -152,18 +221,13 @@
             `;
 
             try {
-                // Optimistic UI will be handled by the next loadHistory poll or immediate trigger
                 await fetch('/graphql', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ query: mutation })
                 });
-                
-                // Trigger immediate refresh
                 setTimeout(() => loadHistory(true), 500);
-            } catch (err) {
-                console.error('Send failed:', err);
-            } finally {
+            } catch (err) { console.error('Send failed:', err); } finally {
                 messageInput.disabled = false;
                 sendBtn.disabled = false;
                 messageInput.focus();
@@ -174,7 +238,6 @@
         messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
 
         fetchProfile();
-        // Poll for new messages every 3 seconds
         setInterval(() => loadHistory(false), 3000);
     </script>
 </body>
