@@ -26,17 +26,6 @@ public class OutboxRelay {
         this.outboxRepository = outboxRepository;
         this.rabbitTemplate = rabbitTemplate;
         this.objectMapper = objectMapper;
-
-        this.rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
-            if (ack && correlationData != null) {
-                Long id = Long.valueOf(correlationData.getId());
-                updateStatus(id, OutboxEvent.OutboxStatus.PROCESSED);
-                log.info("Message {} successfully published and acked", id);
-            } else if (correlationData != null) {
-                Long id = Long.valueOf(correlationData.getId());
-                log.error("Message {} failed to publish: {}", id, cause);
-            }
-        });
     }
 
     private void updateStatus(Long id, OutboxEvent.OutboxStatus status) {
@@ -54,7 +43,6 @@ public class OutboxRelay {
                 log.info("Relaying pending event {} (Type: {})", event.getEventId(), event.getType());
                 
                 MessageCreatedEvent messagePayload = objectMapper.readValue(event.getPayload(), MessageCreatedEvent.class);
-                CorrelationData correlationData = new CorrelationData(event.getId().toString());
 
                 rabbitTemplate.convertAndSend(
                     RabbitConfig.EXCHANGE_NAME,
@@ -63,11 +51,16 @@ public class OutboxRelay {
                     message -> {
                         message.getMessageProperties().setHeader("X-Sender-App", "ChatService");
                         return message;
-                    },
-                    correlationData
+                    }
                 );
+
+                // Mark as processed immediately after sending
+                updateStatus(event.getId(), OutboxEvent.OutboxStatus.PROCESSED);
+                log.info("Message {} successfully published and marked PROCESSED", event.getId());
+
             } catch (Exception e) {
                 log.error("Error relaying event {}: {}", event.getId(), e.getMessage());
+                updateStatus(event.getId(), OutboxEvent.OutboxStatus.FAILED);
             }
         }
     }
