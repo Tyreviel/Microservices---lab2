@@ -34,8 +34,9 @@ public class BffConfig {
     @Bean
     public RouterFunction<ServerResponse> userRoutes() {
         return route()
+                .POST("/api/users/register", http())
+                .before(uri("http://userservice:8082/"))
                 .path("/api/users", builder -> builder
-                        .POST("/register", http())
                         .GET("/me", http())
                         .GET("/{username}", http())
                         .PUT("/me", http())
