@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: chat-app-config
 data:
-  AUTH_ISSUER_URI: "http://authservice:9000"
+  AUTH_ISSUER_URI: "http://auth.localtest.me"
   SPRING_RABBITMQ_HOST: "rabbitmq"
   SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/users_db?createDatabaseIfNotExist=true"
   SPRING_DATASOURCE_URL_CHAT: "jdbc:mysql://mysql:3306/chat_db?createDatabaseIfNotExist=true"
