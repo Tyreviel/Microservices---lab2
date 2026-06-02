@@ -9,7 +9,7 @@ import java.util.Map;
 @RestController
 public class HomeController {
 
-    @GetMapping("/")
+    @GetMapping("/home")
     public Map<String, Object> home() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return Map.of(
