@@ -59,7 +59,7 @@
         const profileInfo = document.getElementById('profile-info');
 
         let currentUser = null;
-        let lastMessageCount = 0;
+        let lastMessageFingerprint = "";
 
         async function fetchProfile() {
             try {
@@ -97,18 +97,25 @@
                     body: JSON.stringify({ query })
                 });
                 const { data } = await response.json();
-                const messages = data.chatHistory.messages;
+                const messages = data.chatHistory.messages || [];
                 
-                // Only update if we have new messages
-                if (messages.length !== lastMessageCount || forceScroll) {
+                // Sort by timestamp (oldest first)
+                messages.sort((a, b) => a.timestamp - b.timestamp);
+
+                // Create a unique "fingerprint" of the chat history to detect changes
+                const fingerprint = messages.map(m => m.timestamp + m.content).join("|");
+                
+                // Only update if the content has changed or scroll is forced
+                if (fingerprint !== lastMessageFingerprint || forceScroll) {
                     chatWindow.innerHTML = '';
                     
-                    // Sort by timestamp (oldest first, so newest is at bottom)
-                    messages.sort((a, b) => a.timestamp - b.timestamp);
+                    if (messages.length === 0) {
+                        chatWindow.innerHTML = '<div style="color: #64748b; text-align: center; margin-top: auto;">No messages yet. Send a hello!</div>';
+                    } else {
+                        messages.forEach(msg => appendMessage(msg.sender.username, msg.content, false));
+                    }
                     
-                    messages.forEach(msg => appendMessage(msg.sender.username, msg.content, false));
-                    
-                    lastMessageCount = messages.length;
+                    lastMessageFingerprint = fingerprint;
                     chatWindow.scrollTop = chatWindow.scrollHeight;
                 }
             } catch (err) { console.error('History failed:', err); }
