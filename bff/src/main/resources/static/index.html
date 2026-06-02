@@ -59,6 +59,7 @@
         const profileInfo = document.getElementById('profile-info');
 
         let currentUser = null;
+        let lastMessageCount = 0;
 
         async function fetchProfile() {
             try {
@@ -71,19 +72,20 @@
                     <span class="status-badge">${data.status || 'Active'}</span>
                     <span style="color: #64748b">${data.email}</span>
                 `;
-                loadHistory();
+                loadHistory(true); // Initial load with forced scroll
             } catch (err) {
                 profileInfo.innerHTML = '<span style="color: #ef4444">Error loading profile. Please refresh.</span>';
             }
         }
 
-        async function loadHistory() {
+        async function loadHistory(forceScroll = false) {
             const query = `
                 query {
                   chatHistory(contactId: "SupportBot") {
                     messages {
                       sender { username }
                       content
+                      timestamp
                     }
                   }
                 }
@@ -95,14 +97,24 @@
                     body: JSON.stringify({ query })
                 });
                 const { data } = await response.json();
-                if (data.chatHistory.messages.length > 0) {
+                const messages = data.chatHistory.messages;
+                
+                // Only update if we have new messages
+                if (messages.length !== lastMessageCount || forceScroll) {
                     chatWindow.innerHTML = '';
-                    data.chatHistory.messages.forEach(msg => appendMessage(msg.sender.username, msg.content));
+                    
+                    // Sort by timestamp (oldest first, so newest is at bottom)
+                    messages.sort((a, b) => a.timestamp - b.timestamp);
+                    
+                    messages.forEach(msg => appendMessage(msg.sender.username, msg.content, false));
+                    
+                    lastMessageCount = messages.length;
+                    chatWindow.scrollTop = chatWindow.scrollHeight;
                 }
             } catch (err) { console.error('History failed:', err); }
         }
 
-        function appendMessage(sender, content) {
+        function appendMessage(sender, content, scroll = true) {
             const isSent = sender === currentUser;
             const div = document.createElement('div');
             div.className = `message ${isSent ? 'sent' : 'received'}`;
@@ -111,7 +123,9 @@
                 <div class="content">${content}</div>
             `;
             chatWindow.appendChild(div);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
+            if (scroll) {
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
         }
 
         async function sendMessage() {
@@ -131,17 +145,15 @@
             `;
 
             try {
-                // Optimistic UI
-                appendMessage(currentUser, content);
-                
+                // Optimistic UI will be handled by the next loadHistory poll or immediate trigger
                 await fetch('/graphql', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ query: mutation })
                 });
                 
-                // Refresh after a short delay to get the bot's response
-                setTimeout(loadHistory, 1000);
+                // Trigger immediate refresh
+                setTimeout(() => loadHistory(true), 500);
             } catch (err) {
                 console.error('Send failed:', err);
             } finally {
@@ -156,7 +168,7 @@
 
         fetchProfile();
         // Poll for new messages every 3 seconds
-        setInterval(loadHistory, 3000);
+        setInterval(() => loadHistory(false), 3000);
     </script>
 </body>
 </html>
