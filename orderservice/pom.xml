@@ -14,7 +14,7 @@
     <name>orderservice</name>
     <description>Order Service with Outbox Pattern</description>
     <properties>
-        <java.version>26</java.version>
+        <java.version>25</java.version>
     </properties>
     <dependencies>
         <dependency>
