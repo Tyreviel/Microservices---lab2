@@ -223,4 +223,76 @@ spec:
                 name: chat-app-config
           ports:
             - containerPort: 8086
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notificationservice
+spec:
+  ports:
+    - port: 8085
+  selector:
+    app: notificationservice
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notificationservice
+spec:
+  selector:
+    matchLabels:
+      app: notificationservice
+  template:
+    metadata:
+      labels:
+        app: notificationservice
+    spec:
+      containers:
+        - name: notificationservice
+          image: notificationservice:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: chat-app-config
+          ports:
+            - containerPort: 8085
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orderservice
+spec:
+  ports:
+    - port: 8084
+  selector:
+    app: orderservice
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orderservice
+spec:
+  selector:
+    matchLabels:
+      app: orderservice
+  template:
+    metadata:
+      labels:
+        app: orderservice
+    spec:
+      containers:
+        - name: orderservice
+          image: orderservice:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: chat-app-config
+                  key: SPRING_DATASOURCE_URL
+          envFrom:
+            - configMapRef:
+                name: chat-app-config
+          ports:
+            - containerPort: 8084
 
